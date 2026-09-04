@@ -375,7 +375,14 @@ digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 - **Apple Silicon segfault** — fixed in `face_encoder.py` via EXIF correction, RGB forcing, size capping, and C-contiguous arrays.
 - **Serper free tier** — Google Lens `/lens` returns limited results on free plans. Pipeline uses 4-strategy fallback to always complete.
 - **Best results with public figures** — Google Lens only finds matches for publicly indexed faces.
-- **Social media login walls** — Instagram/TikTok/X block scraping; pipeline uses whatever OG tags are public.
+- **Social media platform restrictions** — major platforms actively block server-side scraping for unauthenticated requests. Here is exactly what each returns:
+  - **Instagram** — redirects to a login page. No OG title, no OG image, no description is returned. The URL is still discovered and hashed correctly; only the preview in the results card is empty.
+  - **X / Twitter** — returns minimal OG data (sometimes a title, rarely an image). Content is behind a login wall for full viewing.
+  - **TikTok** — blocks all scraping entirely. Returns a generic page with no post-specific metadata.
+  - **Facebook** — returns partial OG data for public posts, nothing for private ones.
+  - **LinkedIn** — blocks scraping aggressively; returns generic site metadata only.
+  - **Reddit, YouTube, Pinterest** — generally return good OG metadata including title, description, and preview image.
+  - The pipeline handles all of these gracefully: whatever metadata is publicly accessible gets hashed and registered. An empty title or missing image does not prevent blockchain registration — the URL alone is sufficient to produce a unique, verifiable hash.
 - **Sepolia confirmations** — ~12 seconds per transaction, normal testnet behaviour.
 - **In-memory job store** — pipeline jobs reset on server restart, fine for demos.
 
@@ -394,3 +401,4 @@ digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 | `Hash already registered` | Same post registered twice — intentional, use a new image |
 | No visual matches on Step 2 | 4-strategy fallback kicks in automatically — pipeline still completes |
 | Sepolia tx pending | Out of Sepolia ETH — claim from https://cloud.google.com/application/web3/faucet/ethereum/sepolia |
+| Result card shows empty title/image | The discovered URL is from Instagram, TikTok, or X — these block scraping. The hash and blockchain record are still valid; only the UI preview is empty. |
