@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: facechain
+    runtime: python
+    buildCommand: |
+      pip install --upgrade pip setuptools wheel &&
+      pip install cmake &&
+      pip install dlib==19.24.6 &&
+      pip install git+https://github.com/ageitgey/face_recognition_models &&
+      pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: PORT
+        value: 7860
+      - key: SERPER_API_KEY
+        sync: false
+      - key: IMGBB_API_KEY
+        sync: false
+      - key: SEPOLIA_RPC_URL
+        sync: false
+      - key: PRIVATE_KEY
+        sync: false
+      - key: WALLET_ADDRESS
+        sync: false
+      - key: CONTRACT_ADDRESS
+        sync: false
