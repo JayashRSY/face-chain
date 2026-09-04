@@ -11,18 +11,18 @@ Built for **HH Goa 2026 — Task 3: Face Identification & Blockchain Verificatio
 ## Screenshots
 
 ### 1. Upload a face photo
-![Upload](docs/screenshots/1-upload.png)
+![Upload](public/images/1.png)
 
 ### 2. Pipeline runs live — all 5 steps green
-![Pipeline](docs/screenshots/2-pipeline.png)
+![Pipeline](public/images/2.png)
 > Salman Khan photo — 59 visual matches found, 20 on social media. Instagram post discovered.
 
 ### 3. Result — on-chain record verified
-![Result](docs/screenshots/3-result.png)
+![Result](public/images/3.png)
 > SHA-256 hash `8ba83127...` registered on Ethereum Sepolia at 2026-09-04 16:53:12 UTC.
 
 ### 4. Standalone verification
-![Verify](docs/screenshots/4-verify.png)
+![Verify](public/images/4.png)
 > Hash verified on-chain with full metadata: `FaceChain|https://www.instagram.com/p/DS4HiWNit4Z/`
 
 ---
@@ -145,8 +145,8 @@ face-chain/
 │       ├── css/main.css        # Dark theme styles
 │       └── js/app.js           # Drag-drop, SSE listener, results renderer
 │
-├── docs/
-│   └── screenshots/            # UI screenshots for README
+├── public/
+│   └── images/                 # UI screenshots (1.png - 4.png)
 ├── sample_images/              # Put test face photos here
 ├── uploads/                    # Temp store for uploaded images (auto-created)
 ├── requirements.txt
