@@ -3,12 +3,14 @@ face_encoder.py
 Detects faces and returns encodings using dlib directly.
 Points to model files by path — avoids the broken face_recognition_models
 pkg_resources import that fails on Python 3.11+.
+ARM64 / Apple Silicon safe: converts image carefully before passing to dlib.
 """
 
 import io
+import os
 import dlib
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from pathlib import Path
 
 # ── Locate model files directly ───────────────────────────────
@@ -28,9 +30,25 @@ ENCODER = dlib.face_recognition_model_v1(
 )
 
 
-def _load_image(image_path: str) -> np.ndarray:
-    img = Image.open(image_path).convert("RGB")
-    return np.array(img)
+def _safe_load(image_path: str) -> np.ndarray:
+    """
+    Load image safely for dlib on ARM64 Mac.
+    - Strips EXIF orientation
+    - Forces RGB (no alpha, no palette, no CMYK)
+    - Returns a C-contiguous uint8 numpy array
+    """
+    with Image.open(image_path) as img:
+        # Apply EXIF rotation so faces aren't sideways
+        img = ImageOps.exif_transpose(img)
+        # Force plain RGB — dlib segfaults on RGBA / P mode
+        img = img.convert("RGB")
+        # Resize if very large — dlib is slow and can crash on huge images
+        max_dim = 1200
+        if max(img.size) > max_dim:
+            img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+        arr = np.array(img, dtype=np.uint8)
+        # Ensure C-contiguous memory layout
+        return np.ascontiguousarray(arr)
 
 
 def encode_face(image_path: str) -> np.ndarray:
@@ -38,7 +56,7 @@ def encode_face(image_path: str) -> np.ndarray:
     Load image, detect faces with dlib, return 128-dim encoding of first face.
     Raises ValueError if no face is detected.
     """
-    image      = _load_image(image_path)
+    image = _safe_load(image_path)
     detections = DETECTOR(image, 1)
 
     if len(detections) == 0:
@@ -55,7 +73,7 @@ def get_face_crop_bytes(image_path: str) -> bytes:
     Returns the cropped face region as JPEG bytes.
     Used for reverse image search upload.
     """
-    image      = _load_image(image_path)
+    image      = _safe_load(image_path)
     detections = DETECTOR(image, 1)
 
     if len(detections) == 0:
