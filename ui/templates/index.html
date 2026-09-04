@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FaceChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+          </svg>
+        </span>
+        <span class="logo-text">FaceChain</span>
+      </div>
+      <div class="header-badge">Sepolia Testnet</div>
+    </div>
+  </header>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-pipeline">
+        <span class="pipeline-node">Face Scan</span>
+        <span class="pipeline-arrow">→</span>
+        <span class="pipeline-node">Web Discovery</span>
+        <span class="pipeline-arrow">→</span>
+        <span class="pipeline-node">Blockchain Proof</span>
+      </div>
+      <h1 class="hero-title">Identity meets<br/>immutable truth.</h1>
+      <p class="hero-sub">Upload a face photo. FaceChain finds matching content across the web and seals the discovery as a tamper-evident record on the Ethereum blockchain.</p>
+    </div>
+  </section>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- Upload card -->
+    <div class="card upload-card" id="uploadCard">
+      <div class="card-label">Step 1 — Upload face image</div>
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+        <p class="drop-primary">Drop a face photo here</p>
+        <p class="drop-secondary">JPG, PNG or WebP — max 16 MB</p>
+        <button class="btn-outline" id="browseBtn">Browse file</button>
+        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp" hidden />
+      </div>
+      <div class="preview-row" id="previewRow" style="display:none">
+        <img id="previewImg" class="preview-img" alt="Preview" />
+        <div class="preview-meta">
+          <div class="preview-name" id="previewName"></div>
+          <div class="preview-size" id="previewSize"></div>
+          <button class="btn-primary" id="runBtn">Run Pipeline</button>
+          <button class="btn-ghost" id="clearBtn">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline progress -->
+    <div class="card pipeline-card" id="pipelineCard" style="display:none">
+      <div class="card-label">Pipeline Progress</div>
+      <div class="steps" id="stepsContainer">
+
+        <div class="step" id="step1" data-step="1">
+          <div class="step-indicator"><span class="step-dot"></span></div>
+          <div class="step-body">
+            <div class="step-title">Face Detection</div>
+            <div class="step-desc">Detecting and encoding face with dlib</div>
+            <div class="step-result" id="step1result"></div>
+          </div>
+        </div>
+
+        <div class="step" id="step2" data-step="2">
+          <div class="step-indicator"><span class="step-dot"></span></div>
+          <div class="step-body">
+            <div class="step-title">Reverse Image Search</div>
+            <div class="step-desc">Google Lens via Serper.dev</div>
+            <div class="step-result" id="step2result"></div>
+          </div>
+        </div>
+
+        <div class="step" id="step3" data-step="3">
+          <div class="step-indicator"><span class="step-dot"></span></div>
+          <div class="step-body">
+            <div class="step-title">Post Metadata</div>
+            <div class="step-desc">Scraping Open Graph data from discovered URL</div>
+            <div class="step-result" id="step3result"></div>
+          </div>
+        </div>
+
+        <div class="step" id="step4" data-step="4">
+          <div class="step-indicator"><span class="step-dot"></span></div>
+          <div class="step-body">
+            <div class="step-title">SHA-256 Fingerprint</div>
+            <div class="step-desc">Hashing post data for tamper-evident record</div>
+            <div class="step-result" id="step4result"></div>
+          </div>
+        </div>
+
+        <div class="step" id="step5" data-step="5">
+          <div class="step-indicator"><span class="step-dot"></span></div>
+          <div class="step-body">
+            <div class="step-title">Blockchain Registration</div>
+            <div class="step-desc">Ethereum Sepolia testnet — HashRegistry contract</div>
+            <div class="step-result" id="step5result"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Results card (shown after completion) -->
+    <div class="card results-card" id="resultsCard" style="display:none">
+      <div class="card-label">Result</div>
+
+      <div class="result-grid">
+
+        <!-- Found post -->
+        <div class="result-section">
+          <div class="result-section-title">Discovered Post</div>
+          <div class="found-post" id="foundPost">
+            <img class="found-thumb" id="foundThumb" alt="" />
+            <div class="found-meta">
+              <div class="found-site" id="foundSite"></div>
+              <div class="found-title" id="foundTitle"></div>
+              <div class="found-desc" id="foundDesc"></div>
+              <a class="found-link" id="foundLink" target="_blank" rel="noopener">Open post →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hash -->
+        <div class="result-section">
+          <div class="result-section-title">SHA-256 Fingerprint</div>
+          <div class="hash-box" id="hashBox"></div>
+        </div>
+
+        <!-- Chain record -->
+        <div class="result-section full-width">
+          <div class="result-section-title">On-Chain Record</div>
+          <div class="chain-record" id="chainRecord">
+            <div class="chain-row">
+              <span class="chain-label">Status</span>
+              <span class="chain-value verified-badge" id="verifiedBadge"></span>
+            </div>
+            <div class="chain-row">
+              <span class="chain-label">Transaction</span>
+              <a class="chain-value chain-link" id="txLink" target="_blank" rel="noopener"></a>
+            </div>
+            <div class="chain-row">
+              <span class="chain-label">Registered at</span>
+              <span class="chain-value" id="chainTs"></span>
+            </div>
+            <div class="chain-row">
+              <span class="chain-label">Uploader</span>
+              <span class="chain-value mono" id="chainUploader"></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="results-actions">
+        <button class="btn-primary" id="runAgainBtn">Run another</button>
+        <button class="btn-outline" id="verifyAgainBtn">Verify hash</button>
+      </div>
+    </div>
+
+    <!-- Verify standalone card -->
+    <div class="card verify-card" id="verifyCard">
+      <div class="card-label">Standalone Verification</div>
+      <p class="verify-hint">Already have a hash? Verify it against the Sepolia chain directly.</p>
+      <div class="verify-row">
+        <input class="verify-input" id="verifyInput" type="text" placeholder="Paste 64-char SHA-256 hash..." maxlength="64" spellcheck="false" />
+        <button class="btn-outline" id="verifyBtn">Verify</button>
+      </div>
+      <div class="verify-result" id="verifyResult" style="display:none"></div>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <span>FaceChain</span>
+    <span class="footer-sep">·</span>
+    <span>HH Goa 2026</span>
+    <span class="footer-sep">·</span>
+    <a href="https://sepolia.etherscan.io" target="_blank" rel="noopener">Etherscan</a>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
