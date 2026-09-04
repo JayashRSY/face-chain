@@ -3,9 +3,9 @@ app.py  —  FaceChain Flask API Server
 Serves the UI and exposes pipeline endpoints via SSE (Server-Sent Events)
 so the frontend gets live step-by-step progress.
 
-Run:
+Run locally:
     python app.py
-Then open:  http://localhost:5050
+Then open:  http://localhost:7860
 """
 
 import os
@@ -31,19 +31,16 @@ from pipeline.hasher import hash_post_data
 from pipeline.blockchain import upload_hash, verify_hash
 
 app = Flask(__name__, template_folder="ui/templates", static_folder="ui/static")
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024   # 16MB upload limit
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 UPLOAD_DIR = Path(__file__).parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 
-# In-memory job store {job_id: {"events": [...], "done": bool}}
 jobs: dict = {}
 jobs_lock = threading.Lock()
 
-
-# ── helpers ───────────────────────────────────────────────────
 
 def allowed(filename: str) -> bool:
     return Path(filename).suffix.lower() in ALLOWED_EXT
@@ -52,7 +49,7 @@ def allowed(filename: str) -> bool:
 def push_event(job_id: str, step: int, status: str, message: str, data: dict = None):
     payload = {
         "step": step,
-        "status": status,   # "running" | "done" | "error"
+        "status": status,
         "message": message,
         "data": data or {},
         "ts": time.time(),
@@ -62,16 +59,13 @@ def push_event(job_id: str, step: int, status: str, message: str, data: dict = N
 
 
 def run_pipeline_job(job_id: str, image_path: str):
-    """Runs the pipeline in a background thread, pushing SSE events."""
     try:
-        # ── Step 1: Face Detection ────────────────────────────
         push_event(job_id, 1, "running", "Detecting face in image...")
         encoding = encode_face(image_path)
         push_event(job_id, 1, "done", f"Face detected — encoding shape {encoding.shape}", {
             "encoding_shape": list(encoding.shape),
         })
 
-        # ── Step 2: Reverse Image Search ─────────────────────
         push_event(job_id, 2, "running", "Uploading image and running reverse image search...")
         all_results = reverse_image_search(image_path)
         if not all_results:
@@ -89,20 +83,17 @@ def run_pipeline_job(job_id: str, image_path: str):
             "all_results": all_results[:8],
         })
 
-        # ── Step 3: Scrape Post Metadata ─────────────────────
         push_event(job_id, 3, "running", f"Scraping post metadata from {chosen['link'][:60]}...")
         post_data = scrape_post(chosen["link"])
         post_data["search_title"] = chosen.get("title", "")
         post_data["source"] = chosen.get("source", "")
         push_event(job_id, 3, "done", "Post metadata extracted", {"post": post_data})
 
-        # ── Step 4: Hash ──────────────────────────────────────
         push_event(job_id, 4, "running", "Computing SHA-256 fingerprint of post data...")
         data_hash = hash_post_data(post_data)
         metadata_label = f"FaceChain|{post_data.get('url', '')}"[:200]
         push_event(job_id, 4, "done", "SHA-256 hash computed", {"hash": data_hash})
 
-        # ── Step 5: Blockchain ────────────────────────────────
         push_event(job_id, 5, "running", "Uploading hash to Ethereum Sepolia testnet...")
         tx_hash = upload_hash(data_hash, metadata_label)
 
@@ -130,8 +121,6 @@ def run_pipeline_job(job_id: str, image_path: str):
         with jobs_lock:
             jobs[job_id]["done"] = True
 
-
-# ── routes ────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -162,7 +151,6 @@ def upload():
 
 @app.route("/stream/<job_id>")
 def stream(job_id: str):
-    """Server-Sent Events endpoint — streams pipeline progress to the browser."""
     def generate():
         sent = 0
         while True:
@@ -183,16 +171,12 @@ def stream(job_id: str):
     return Response(
         stream_with_context(generate()),
         mimetype="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
 @app.route("/verify", methods=["POST"])
 def verify():
-    """Standalone verify endpoint — re-verify any hash against the chain."""
     body = request.get_json(silent=True) or {}
     data_hash = body.get("hash", "").strip()
     if len(data_hash) != 64:
@@ -205,5 +189,6 @@ def verify():
 
 
 if __name__ == "__main__":
-    print("\n  FaceChain UI  →  http://localhost:5050\n")
-    app.run(host="0.0.0.0", port=5050, debug=False, threaded=True)
+    port = int(os.environ.get("PORT", 7860))
+    print(f"\n  FaceChain UI  →  http://localhost:{port}\n")
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

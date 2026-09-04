@@ -1,4 +1,4 @@
-# Environment — NEVER commit secrets
+# Secrets — NEVER commit
 .env
 
 # Python
@@ -11,6 +11,10 @@ env/
 *.egg-info/
 dist/
 build/
+
+# Uploads (user images)
+uploads/*
+!uploads/.gitkeep
 
 # macOS
 .DS_Store
